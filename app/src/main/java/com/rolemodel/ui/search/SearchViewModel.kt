@@ -17,6 +17,35 @@ class SearchViewModel constructor(
 
     val searchState = searchLiveData.distinctUntilChanged()
 
+    fun searchArtists(searchTerm: String) {
+        searchLiveData.postValue(ScreenState.Loading)
+
+        if (searchTerm.length <= 2) {
+            searchLiveData.postValue(ScreenState.Success(SearchState.ShowInitial))
+            return
+        }
+
+        repository
+            .searchArtists(searchTerm)
+            .subscribeOn(scheduler.io())
+            .observeOn(scheduler.ui())
+            .subscribe(Consumer {
+                it?.artists?.let { safeArtists ->
+                    safeArtists.persons?.let { safePersons ->
+                        if (safePersons.isNotEmpty())
+                            searchLiveData.postValue(
+                                ScreenState.Success(SearchState.ShowPersons(safePersons))
+                            )
+                        else
+                            searchLiveData.postValue(
+                                ScreenState.Success(SearchState.ShowEmpty)
+                            )
+                    }
+                }
+            }, defaultErrors)
+            .let { compositeDisposable.add(it) }
+    }
+
     override fun onError(status: Status) =
         searchLiveData.postValue(ScreenState.Error(status))
 }

@@ -25,6 +25,32 @@ class SearchViewModelTest {
     private val vm: SearchViewModel = SearchViewModel(repo, TestSchedulerProvider())
 
     @Test
+    fun `test searching artists with not enough characters should emit initial state`() {
+        `when`(repo.searchArtists(sampleArtist.name!!))
+                .thenReturn(Single.just(
+                        SearchResponse(Artists(listOf()))))
+
+        vm.searchArtists("Ba")
+
+        when (val screenState = vm.searchState.observedValue()) {
+            is ScreenState.Success -> assertTrue(screenState.data is SearchState.ShowInitial)
+        }
+    }
+
+    @Test
+    fun `test searching artists no results found should emit no results`() {
+        `when`(repo.searchArtists(sampleArtist.name!!))
+                .thenReturn(Single.just(
+                        SearchResponse(Artists(listOf()))))
+
+        vm.searchArtists(sampleArtist.name!!)
+
+        when (val screenState = vm.searchState.observedValue()) {
+            is ScreenState.Success -> assertTrue(screenState.data is SearchState.ShowEmpty)
+        }
+    }
+
+    @Test
     fun `test searching artists should emit success state`() {
         `when`(repo.searchArtists(sampleArtist.name!!))
                 .thenReturn(Single.just(
@@ -33,6 +59,23 @@ class SearchViewModelTest {
         vm.searchArtists(sampleArtist.name!!)
 
         assert(vm.searchState.observedValue() is ScreenState.Success)
+    }
+
+    @Test
+    fun `test searching artists should emit success state with exact value`() {
+        `when`(repo.searchArtists(sampleArtist.name!!))
+                .thenReturn(Single.just(
+                        SearchResponse(Artists(listOf(sampleArtist)))))
+
+        vm.searchArtists(sampleArtist.name!!)
+
+        when (val screenState = vm.searchState.observedValue()) {
+            is ScreenState.Success ->
+                when (val searchState = screenState.data) {
+                    is SearchState.ShowPersons ->
+                        assert(searchState.persons[0].name == sampleArtist.name)
+                }
+        }
     }
 
     @Test

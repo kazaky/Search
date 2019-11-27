@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">IDAGIO Rolemodel</string>
+    <string name="no_artists_found_try_different_names">No Artists found\nTry different names.</string>
+    <string name="search_for_artists_by_name">Search for artists by name</string>
+    <string name="search_idagio">Search IDAGIO</string>
+    <string name="find">Find your favourite classical Artists</string>
 </resources>

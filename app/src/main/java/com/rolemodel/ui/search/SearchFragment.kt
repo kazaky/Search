@@ -5,6 +5,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.jakewharton.rxbinding3.widget.textChanges
 import com.rolemodel.R
@@ -12,8 +13,11 @@ import com.rolemodel.data.model.Person
 import com.rolemodel.data.model.Status
 import com.rolemodel.ui.base.BaseFragment
 import com.rolemodel.ui.base.ScreenState
+import com.rolemodel.util.getScrollPosition
 import kotlinx.android.synthetic.main.fragment_search.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+
+private const val KEY_SCROLL_POSITION = "scroll_position"
 
 class SearchFragment : BaseFragment() {
     private val viewModel: SearchViewModel by viewModel()
@@ -49,10 +53,8 @@ class SearchFragment : BaseFragment() {
             Snackbar.make(
                 safeActivity.findViewById(android.R.id.content),
                 status.message,
-                Snackbar.LENGTH_INDEFINITE
-            ).setAction(
-                getString(R.string.retry)
-            ) {
+                Snackbar.LENGTH_INDEFINITE).setAction(
+                getString(R.string.retry)) {
                 viewModel.registerSearchListener(etSearch.textChanges())
             }.show()
         }
@@ -89,5 +91,25 @@ class SearchFragment : BaseFragment() {
         rvDoctors.visibility = VISIBLE
         showLoading(false)
         artistsAdapter.submitList(results)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        if (savedInstanceState != null) {
+            // Restore scrolling position
+            rvDoctors?.adapter?.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+                override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                    if (positionStart == 0) {
+                        val scrollPosition = savedInstanceState.getInt(KEY_SCROLL_POSITION)
+                        rvDoctors?.layoutManager?.scrollToPosition(scrollPosition)
+                    }
+                }
+            })
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt(KEY_SCROLL_POSITION, rvDoctors?.getScrollPosition() ?: 0)
+        super.onSaveInstanceState(outState)
     }
 }
